@@ -1,0 +1,707 @@
+<title>Plano do Karaokê Web</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: coluna de leitura única (~72ch) com faixas largas para tabelas, wireframes e demo */
+:root {
+  --bg: #f6f5fa;
+  --surface: #ffffff;
+  --sunk: #ecebf3;
+  --fg: #1b1a26;
+  --muted: #5d5b70;
+  --line: #d9d7e4;
+  --accent: #c2255c;      /* cor da palavra "cantada" */
+  --accent-soft: #fbe4ec;
+  --unsung: #b5b2c6;
+  --ok: #217a4b;  --ok-soft: #e1f3e8;
+  --warn: #9a5b00; --warn-soft: #fbefd9;
+  --bad: #b3261e; --bad-soft: #fbe2e0;
+  --stage: #17152a;       /* fundo do palco/demo */
+  --stage-fg: #f3f1ff;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12111b; --surface: #1b1a27; --sunk: #232233; --fg: #ecebf5; --muted: #a3a1b8;
+    --line: #34324a; --accent: #ff5c93; --accent-soft: #3a1626; --unsung: #5b5873;
+    --ok: #5fd08f; --ok-soft: #14301f; --warn: #f0b04f; --warn-soft: #33260f;
+    --bad: #ff8079; --bad-soft: #3a1714; --stage: #0b0a14; --stage-fg: #f3f1ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12111b; --surface: #1b1a27; --sunk: #232233; --fg: #ecebf5; --muted: #a3a1b8;
+  --line: #34324a; --accent: #ff5c93; --accent-soft: #3a1626; --unsung: #5b5873;
+  --ok: #5fd08f; --ok-soft: #14301f; --warn: #f0b04f; --warn-soft: #33260f;
+  --bad: #ff8079; --bad-soft: #3a1714; --stage: #0b0a14; --stage-fg: #f3f1ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 72ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.section { display: flex; flex-direction: column; gap: 18px; }
+.section > header { display: flex; flex-direction: column; gap: 6px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+ul.clean { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+
+/* Cabeçalho */
+.top { display: flex; flex-direction: column; gap: 14px; }
+.top .lede { font-size: 1.15rem; color: var(--muted); max-width: 64ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+
+/* Resumo */
+.tldr { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+.tldr ol { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+.tldr strong { color: var(--fg); }
+
+/* Callout do achado-chave */
+.callout { border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+.callout h3 { color: var(--warn); }
+
+/* Demo de palco */
+.stage { background: var(--stage); color: var(--stage-fg); border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); }
+.stage-lyrics { position: relative; height: 260px; overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
+.track { position: absolute; left: 0; right: 0; top: 0; padding: 0 clamp(16px, 4vw, 40px); transition: transform 0.45s cubic-bezier(.2,.7,.2,1); }
+.lyr { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.35rem, 3.6vw, 2.1rem); line-height: 1.25; height: 64px; display: flex; align-items: center; flex-wrap: wrap; gap: 0 0.32em; opacity: 0.35; transition: opacity 0.3s; }
+.lyr.past { opacity: 0.55; }
+.lyr.now { opacity: 1; }
+.w { --p: 0%; background: linear-gradient(90deg, var(--accent) var(--p), color-mix(in srgb, var(--stage-fg) 45%, transparent) var(--p)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lyr.past .w { --p: 100%; }
+.stage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px clamp(16px, 4vw, 40px); border-top: 1px solid color-mix(in srgb, var(--stage-fg) 14%, transparent); font-family: var(--font-mono); font-size: 0.8rem; }
+.stage-bar button { font: inherit; font-weight: 500; background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 7px 16px; cursor: pointer; }
+.stage-bar button.ghost { background: transparent; color: var(--stage-fg); border: 1px solid color-mix(in srgb, var(--stage-fg) 30%, transparent); }
+.stage-bar .clock { font-variant-numeric: tabular-nums; opacity: 0.85; }
+.stage-bar .note { opacity: 0.6; flex-basis: 100%; }
+@media (prefers-reduced-motion: reduce) { .track, .lyr { transition: none; } }
+
+/* Tabelas */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--sunk); }
+td:first-child { font-weight: 600; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.acc { background: var(--accent-soft); color: var(--accent); }
+
+/* Níveis de sincronia */
+.levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.level { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.level .sample { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; padding: 10px 12px; background: var(--stage); color: var(--stage-fg); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 0 0.3em; }
+.level .sample .w { --p: 0%; }
+.level p { color: var(--muted); font-size: 0.92rem; }
+
+/* Arquitetura */
+.arch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.arch .col { display: flex; flex-direction: column; gap: 10px; }
+.arch .col > .eyebrow { padding-left: 2px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.box b { font-family: var(--font-display); font-size: 1rem; }
+.box span { color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+.box.core { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.box.later { border-style: dashed; }
+@media (max-width: 760px) { .arch { grid-template-columns: minmax(0, 1fr); } }
+
+/* Código */
+pre { margin: 0; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.55; }
+pre .c { color: var(--muted); }
+pre .k { color: var(--accent); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.two > * { min-width: 0; }
+@media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
+
+/* Wireframes */
+.frames { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 640px) { .frames { grid-template-columns: minmax(0, 1fr); } }
+.frame { display: flex; flex-direction: column; gap: 8px; }
+.device { background: var(--stage); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); }
+.device.phone { aspect-ratio: 9 / 17; max-width: 220px; width: 100%; }
+.device.desk { aspect-ratio: 16 / 9; max-width: 100%; flex-direction: row; }
+.vid { background: repeating-linear-gradient(45deg, #2b2840, #2b2840 6px, #322e4b 6px, #322e4b 12px); border-radius: 6px; display: grid; place-items: center; color: #b9b5d6; font-family: var(--font-mono); font-size: 0.68rem; text-align: center; padding: 4px; }
+.phone .vid { aspect-ratio: 16 / 9; }
+.desk .vid { width: 34%; aspect-ratio: 16 / 9; align-self: flex-start; }
+.fake-lyrics { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 7px; padding: 6px 8px; min-width: 0; }
+.fake-lyrics i { display: block; height: 9px; border-radius: 4px; background: #4a4666; }
+.fake-lyrics i.now { height: 13px; background: linear-gradient(90deg, var(--accent) 55%, #6c6890 55%); }
+.desk .fake-lyrics i { height: 12px; }
+.desk .fake-lyrics i.now { height: 18px; }
+.fake-ctrl { height: 22px; border-radius: 6px; background: #2b2840; }
+.frame figcaption { font-size: 0.85rem; color: var(--muted); }
+
+/* Roadmap */
+.phases { display: flex; flex-direction: column; gap: 0; border-left: 2px solid var(--line); margin-left: 8px; }
+.phase { position: relative; padding: 0 0 26px 26px; display: flex; flex-direction: column; gap: 8px; }
+.phase:last-child { padding-bottom: 0; }
+.phase::before { content: ""; position: absolute; left: -8px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
+.phase.v2::before { border-style: dashed; border-color: var(--muted); }
+.phase .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.phase .dur { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.phase ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; color: var(--fg); }
+.phase .done { font-size: 0.88rem; color: var(--muted); }
+
+/* Decisões */
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.decision { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.decision .q { font-weight: 600; }
+.decision .rec { font-size: 0.9rem; color: var(--muted); }
+.decision .rec b { color: var(--accent); font-weight: 600; }
+
+.sources { font-size: 0.88rem; color: var(--muted); }
+.sources ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+footer { font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+
+<div class="wrap">
+
+  <!-- ================= TOPO ================= -->
+  <header class="top">
+    <span class="eyebrow">Plano de desenvolvimento · para revisão</span>
+    <h1>Karaokê web com letra palavra a palavra</h1>
+    <p class="lede">Uma aplicação estática hospedada no GitHub Pages, que funciona no celular e no computador, toca a música por um vídeo do YouTube e mostra a letra rolando sozinha com a palavra atual acesa, no estilo do Spotify.</p>
+    <div class="meta"><span>29 out 2026</span><span>Versão 1 do plano</span><span>Nada implementado ainda</span></div>
+  </header>
+
+  <!-- ================= RESUMO ================= -->
+  <section class="tldr" aria-labelledby="tldr-h">
+    <h2 id="tldr-h" style="font-size:1.3rem">Resumo em 6 pontos</h2>
+    <ol>
+      <li><strong>YouTube é mesmo o melhor caminho para a v1.</strong> É grátis, legal, já tem quase todo o catálogo e o player expõe o tempo atual da música, que é tudo o que a sincronia precisa.</li>
+      <li><strong>As regras do YouTube impõem duas restrições de layout:</strong> o vídeo precisa ficar visível (mínimo 200×200 px) e nada pode ficar <em>por cima</em> dele. A letra fica ao lado ou abaixo do vídeo, nunca sobreposta.</li>
+      <li><strong>Letras vêm do LRCLIB</strong>, um banco aberto e gratuito que funciona direto do navegador. Quase tudo lá é sincronizado por linha. A sincronia palavra a palavra é estimada no início e refinada com um editor de “toque no ritmo” dentro do app.</li>
+      <li><strong>A v2 (só a trilha) não pode remover a voz do vídeo do YouTube</strong>, porque as políticas proíbem separar ou trocar o áudio. O caminho é ligar cada música a dois vídeos (original e versão karaokê) ou usar arquivos de áudio seus, processados localmente.</li>
+      <li><strong>Stack:</strong> Vite + TypeScript + React, publicado pelo GitHub Actions, instalável como PWA no celular. Sem servidor e sem custo.</li>
+      <li><strong>Prazo estimado:</strong> 1 a 2 dias para a prova de conceito, cerca de 1,5 semana para um MVP usável, mais 1 semana para a sincronia por palavra bem feita.</li>
+    </ol>
+  </section>
+
+  <!-- ================= DEMO ================= -->
+  <section class="section" aria-labelledby="demo-h">
+    <header>
+      <span class="eyebrow">Como vai parecer</span>
+      <h2 id="demo-h">O efeito de karaokê, funcionando</h2>
+    </header>
+    <p class="prose">Esta é uma simulação do motor de sincronia proposto, com uma letra de exemplo escrita para este documento. O relógio avança a cada quadro, a linha atual é centralizada sozinha e cada palavra é preenchida da esquerda para a direita. Aqui a música não toca: no app, o relógio vem do player do YouTube.</p>
+    <div class="stage" id="stage">
+      <div class="stage-lyrics"><div class="track" id="track"></div></div>
+      <div class="stage-bar">
+        <button type="button" id="demo-play">Pausar</button>
+        <button type="button" class="ghost" id="demo-restart">Recomeçar</button>
+        <span class="clock" id="demo-clock">00:00.00</span>
+        <span class="note">Tempos por linha; palavras distribuídas pelo número de letras (o mesmo método de estimativa do MVP).</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FONTE DO ÁUDIO ================= -->
+  <section class="section" aria-labelledby="audio-h">
+    <header>
+      <span class="eyebrow">Decisão 1</span>
+      <h2 id="audio-h">De onde vem a música</h2>
+    </header>
+    <p class="prose">Comparei as quatro formas viáveis de tocar música num site estático. O critério principal é se funciona no GitHub Pages (sem servidor), no celular, e sem violar termos de uso ou distribuir arquivos protegidos.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Opção</th><th>Veredito</th><th>Prós</th><th>Contras</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Vídeo do YouTube embutido (IFrame Player API)</td>
+            <td><span class="pill ok">Recomendado v1</span></td>
+            <td>Grátis, sem login, catálogo enorme, funciona em celular e desktop. A API dá <code>getCurrentTime()</code>, play, pause e seek. Já existem milhares de vídeos “karaokê/instrumental” para a v2.</td>
+            <td>Pode ter anúncios. Alguns vídeos bloqueiam incorporação. Cada vídeo tem uma introdução diferente, então a letra precisa de um ajuste de atraso por vídeo. Não pode sobrepor nada ao player nem tocar com o vídeo escondido.</td>
+          </tr>
+          <tr>
+            <td>Arquivos de áudio seus (MP3/M4A do seu aparelho)</td>
+            <td><span class="pill acc">Modo extra v2</span></td>
+            <td>Tempo preciso, sem anúncios, permite separar voz e trilha e ajustar o volume da voz guia. O arquivo é aberto do próprio aparelho e não é publicado.</td>
+            <td>Você precisa ter os arquivos. Não dá para publicar os áudios no GitHub Pages (direitos autorais). Cada aparelho precisa carregar os seus.</td>
+          </tr>
+          <tr>
+            <td>Spotify (Web Playback SDK)</td>
+            <td><span class="pill bad">Descartado</span></td>
+            <td>Mesmo catálogo e qualidade do Spotify.</td>
+            <td>Exige Premium e login. A política de desenvolvedor proíbe sincronizar gravações com conteúdo visual. O suporte em navegador de celular é instável. As letras sincronizadas do Spotify não são expostas pela API.</td>
+          </tr>
+          <tr>
+            <td>Áudio extraído do YouTube (download ou proxy)</td>
+            <td><span class="pill bad">Proibido</span></td>
+            <td>Daria o melhor dos dois mundos tecnicamente.</td>
+            <td>Os termos do YouTube proíbem baixar, armazenar ou extrair o áudio e proíbem usar outra tecnologia para obter o conteúdo.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <h3>O que as regras do YouTube mudam no plano</h3>
+      <ul class="clean">
+        <li><b>Sem sobreposição:</b> “não exiba sobreposições, molduras ou outros elementos na frente de qualquer parte do player”. A letra não pode ficar em cima do vídeo como num karaokê de TV.</li>
+        <li><b>Player visível:</b> mínimo 200×200 px (recomendado 480×270), e nada de tocar com o vídeo fora da tela.</li>
+        <li><b>Áudio intocável:</b> é proibido separar, isolar ou modificar o áudio, e trocar a faixa de áudio do vídeo. Isso descarta remover a voz de um vídeo comum.</li>
+        <li><b>Autoplay:</b> só com interação do usuário (o celular exige isso de qualquer forma). Vamos tratar o evento <code>onAutoplayBlocked</code> com um botão “Tocar”.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= LETRAS ================= -->
+  <section class="section" aria-labelledby="lyrics-h">
+    <header>
+      <span class="eyebrow">Decisão 2</span>
+      <h2 id="lyrics-h">De onde vem a letra sincronizada</h2>
+    </header>
+    <p class="prose">O efeito do Spotify depende de saber quando <em>cada palavra</em> começa e termina. Essa informação é rara e quase sempre paga (o Spotify usa a Musixmatch). A proposta é combinar uma fonte gratuita por linha com estimativa e ajuste manual.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fonte</th><th>Veredito</th><th>O que entrega</th><th>Observações</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>LRCLIB (<code>lrclib.net/api</code>)</td>
+            <td><span class="pill ok">Fonte principal</span></td>
+            <td>Letra sincronizada por linha (formato LRC) para a maioria das músicas populares; algumas têm sincronia por palavra (<code>hasWordSync</code>).</td>
+            <td>Grátis, sem chave, CORS liberado (chamada direto do navegador). Cerca de 45 a 90 requisições por minuto por IP, suficiente. Pede para o app se identificar no header <code>Lrclib-Client</code>.</td>
+          </tr>
+          <tr>
+            <td>Editor “toque no ritmo” dentro do app</td>
+            <td><span class="pill ok">Incluído</span></td>
+            <td>Sincronia por palavra exata, feita uma vez por música e salva.</td>
+            <td>Você toca a música e bate na tela (ou na barra de espaço) a cada palavra. Leva o tempo de uma música e respeita as regras do YouTube, porque não toca no áudio.</td>
+          </tr>
+          <tr>
+            <td>Alinhamento automático (WhisperX, syncalong)</td>
+            <td><span class="pill acc">Opcional v2</span></td>
+            <td>Tempos por palavra gerados por IA a partir do áudio e da letra conhecida.</td>
+            <td>Roda localmente em Python, sobre um arquivo de áudio seu (não do YouTube). Precisão em voz cantada não tem benchmark confiável; sempre vai precisar de revisão no editor.</td>
+          </tr>
+          <tr>
+            <td>Musixmatch (richsync)</td>
+            <td><span class="pill bad">Descartado</span></td>
+            <td>Sincronia por palavra profissional, a mesma do Spotify.</td>
+            <td>O plano grátis entrega só parte da letra; letra completa e sincronizada exige licença comercial, com preço sob consulta.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:8px">Três níveis de sincronia, do MVP ao ideal</h3>
+    <div class="levels">
+      <div class="level">
+        <span class="pill warn" style="align-self:flex-start">Nível 1 · por linha</span>
+        <div class="sample"><span class="w" style="--p:100%">Cada</span><span class="w" style="--p:100%">palavra</span><span class="w" style="--p:100%">chega</span><span class="w" style="--p:100%">na</span><span class="w" style="--p:100%">hora</span></div>
+        <p>A linha inteira acende de uma vez. É o que o LRCLIB entrega direto. Já é um karaokê usável.</p>
+      </div>
+      <div class="level">
+        <span class="pill acc" style="align-self:flex-start">Nível 2 · palavra estimada</span>
+        <div class="sample"><span class="w" style="--p:100%">Cada</span><span class="w" style="--p:100%">palavra</span><span class="w" style="--p:60%">chega</span><span class="w">na</span><span class="w">hora</span></div>
+        <p>O tempo da linha é dividido entre as palavras pelo tamanho de cada uma. Visual igual ao Spotify, mas pode adiantar ou atrasar em notas longas. Padrão do MVP.</p>
+      </div>
+      <div class="level">
+        <span class="pill ok" style="align-self:flex-start">Nível 3 · palavra exata</span>
+        <div class="sample"><span class="w" style="--p:100%">Cada</span><span class="w" style="--p:100%">palavra</span><span class="w" style="--p:100%">chega</span><span class="w" style="--p:30%">na</span><span class="w">hora</span></div>
+        <p>Tempos medidos de verdade, pelo editor ou pelo LRCLIB quando a música já tem. Usado sempre que existir.</p>
+      </div>
+    </div>
+    <p class="prose" style="color:var(--muted)">Um detalhe importante: os tempos do LRCLIB seguem a versão de estúdio. Videoclipes costumam ter introdução extra, então cada música guarda um <b>atraso em milissegundos por vídeo</b>. O app terá uma calibração rápida: “toque quando ouvir a primeira palavra”, e o atraso é calculado sozinho.</p>
+  </section>
+
+  <!-- ================= ARQUITETURA ================= -->
+  <section class="section" aria-labelledby="arch-h">
+    <header>
+      <span class="eyebrow">Como as peças se encaixam</span>
+      <h2 id="arch-h">Arquitetura</h2>
+    </header>
+    <p class="prose">Tudo roda no navegador. O ponto central é um <b>adaptador de player</b>: o restante do app só pede “que horas são na música?”, sem saber se a fonte é o YouTube ou um arquivo local. Assim a v2 entra sem reescrever a tela de karaokê.</p>
+    <div class="arch">
+      <div class="col">
+        <span class="eyebrow">Fontes</span>
+        <div class="box"><b>YouTube IFrame API</b><span>Vídeo visível; tempo atual, play, pause, seek.</span></div>
+        <div class="box"><b>LRCLIB API</b><span>Busca e baixa a letra LRC por artista, título e duração.</span></div>
+        <div class="box"><b>Catálogo (JSON no repositório)</b><span>Músicas curadas: id do vídeo, id no LRCLIB, atraso, tempos por palavra.</span></div>
+        <div class="box later"><b>Arquivo de áudio local</b><span>v2: aberto do aparelho, tocado via Web Audio.</span></div>
+      </div>
+      <div class="col">
+        <span class="eyebrow">Núcleo</span>
+        <div class="box core"><b>PlayerAdapter</b><span>Interface única: <code>play</code>, <code>pause</code>, <code>seek</code>, <code>currentTime</code>, eventos de estado.</span></div>
+        <div class="box core"><b>Relógio interpolado</b><span>Lê o player a cada ~250 ms e estima o tempo entre leituras com <code>performance.now()</code>, para animar a 60 fps sem tremer.</span></div>
+        <div class="box core"><b>Motor de letras</b><span>Interpreta LRC e LRC estendido, estima palavras, aplica o atraso e acha a linha e a palavra atuais por busca binária.</span></div>
+        <div class="box"><b>Armazenamento local</b><span>IndexedDB: músicas adicionadas, ajustes de atraso e sincronias feitas no editor. Exporta e importa JSON.</span></div>
+      </div>
+      <div class="col">
+        <span class="eyebrow">Telas</span>
+        <div class="box"><b>Biblioteca</b><span>Lista, busca e “adicionar música” (colar link do YouTube e escolher a letra).</span></div>
+        <div class="box"><b>Palco</b><span>Vídeo + letra rolando + controles; tela cheia, tela sempre acesa (Wake Lock).</span></div>
+        <div class="box"><b>Editor de sincronia</b><span>Toque no ritmo, ajuste fino por palavra, calibração do atraso.</span></div>
+        <div class="box later"><b>Seletor voz / trilha</b><span>v2: alterna versão ou volume da voz guia.</span></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:8px">O laço de sincronia</h3>
+    <p class="prose">É o coração do efeito. O <code>getCurrentTime()</code> do YouTube não é preciso o bastante para animar a cada quadro, então o relógio guarda a última leitura e extrapola:</p>
+<pre><span class="c">// relógio: chamado a cada ~250 ms e nas trocas de estado do player</span>
+sample() { <span class="k">this</span>.mediaT = player.currentTime(); <span class="k">this</span>.wallT = performance.now(); }
+
+<span class="c">// a cada quadro (requestAnimationFrame)</span>
+now() {
+  <span class="k">if</span> (!playing) <span class="k">return</span> <span class="k">this</span>.mediaT;
+  <span class="k">return</span> <span class="k">this</span>.mediaT + (performance.now() - <span class="k">this</span>.wallT) / 1000 * rate;
+}
+
+frame() {
+  <span class="k">const</span> t = clock.now() - song.offsetMs / 1000 - userLatency;
+  <span class="k">const</span> line = findLine(lines, t);          <span class="c">// busca binária</span>
+  <span class="k">const</span> word = findWord(line.words, t);
+  word.el.style.setProperty(<span class="k">'--p'</span>, progress(word, t) + <span class="k">'%'</span>);  <span class="c">// preenchimento</span>
+  <span class="k">if</span> (line !== current) scrollTo(line);   <span class="c">// centraliza com transform</span>
+  requestAnimationFrame(frame);
+}</pre>
+    <p class="prose" style="color:var(--muted)">O preenchimento usa um gradiente aplicado ao texto (<code>background-clip: text</code>) controlado por uma variável CSS, como na demo acima. Só alteramos uma variável por quadro, o que mantém a animação leve até em celulares simples. Haverá também um ajuste global de latência para quem usa caixa de som Bluetooth.</p>
+  </section>
+
+  <!-- ================= LAYOUT ================= -->
+  <section class="section" aria-labelledby="layout-h">
+    <header>
+      <span class="eyebrow">Celular e computador</span>
+      <h2 id="layout-h">Layout que respeita o player</h2>
+    </header>
+    <p class="prose">Como a letra não pode ficar por cima do vídeo, o vídeo vira um elemento pequeno e fixo, e a letra ocupa o resto da tela. Fundo escuro, letra grande, uma linha em destaque.</p>
+    <div class="frames">
+      <figure class="frame" style="margin:0">
+        <div class="device phone">
+          <div class="vid">vídeo<br>16:9</div>
+          <div class="fake-lyrics"><i style="width:60%"></i><i style="width:75%"></i><i class="now" style="width:92%"></i><i style="width:70%"></i><i style="width:50%"></i></div>
+          <div class="fake-ctrl"></div>
+        </div>
+        <figcaption>Celular em pé: vídeo no topo na largura total, letra abaixo, controles no rodapé.</figcaption>
+      </figure>
+      <figure class="frame" style="margin:0">
+        <div class="device desk">
+          <div class="vid">vídeo ≥ 480×270</div>
+          <div class="fake-lyrics"><i style="width:55%"></i><i style="width:68%"></i><i class="now" style="width:88%"></i><i style="width:72%"></i><i style="width:46%"></i></div>
+        </div>
+        <figcaption>Computador, TV ou celular deitado: vídeo numa coluna lateral, letra grande ao lado. Ideal para espelhar na TV da sala.</figcaption>
+      </figure>
+    </div>
+    <ul class="clean prose">
+      <li><b>iPhone:</b> vídeo com <code>playsinline</code>, início sempre por toque. A tela cheia de elementos que não são vídeo não existe no Safari do iPhone; a alternativa é instalar o app na tela inicial (PWA), que abre sem barra do navegador.</li>
+      <li><b>Tela sempre acesa:</b> Screen Wake Lock API (Chrome, Edge e Safari 16.4+).</li>
+      <li><b>Leitura à distância:</b> tamanho da letra ajustável e tema de alto contraste.</li>
+    </ul>
+  </section>
+
+  <!-- ================= ESTRUTURA ================= -->
+  <section class="section" aria-labelledby="struct-h">
+    <header>
+      <span class="eyebrow">Repositório</span>
+      <h2 id="struct-h">Estrutura do projeto e formato dos dados</h2>
+    </header>
+    <div class="two">
+<pre>karaoke/
+├─ src/
+│  ├─ player/
+│  │  ├─ PlayerAdapter.ts    <span class="c">interface comum</span>
+│  │  ├─ YouTubePlayer.ts
+│  │  ├─ AudioFilePlayer.ts  <span class="c">v2</span>
+│  │  └─ clock.ts            <span class="c">relógio interpolado</span>
+│  ├─ lyrics/
+│  │  ├─ lrclib.ts           <span class="c">cliente da API</span>
+│  │  ├─ parseLrc.ts         <span class="c">LRC e LRC estendido</span>
+│  │  ├─ estimateWords.ts    <span class="c">nível 2</span>
+│  │  └─ timeline.ts         <span class="c">busca linha/palavra</span>
+│  ├─ store/db.ts            <span class="c">IndexedDB</span>
+│  ├─ ui/
+│  │  ├─ Library.tsx
+│  │  ├─ Stage.tsx           <span class="c">palco</span>
+│  │  ├─ LyricsView.tsx
+│  │  └─ SyncEditor.tsx
+│  └─ main.tsx
+├─ public/catalog/songs.json
+├─ tests/                    <span class="c">Vitest: parser e timeline</span>
+├─ tools/                    <span class="c">v2: scripts Python</span>
+├─ .github/workflows/deploy.yml
+└─ vite.config.ts</pre>
+<pre><span class="c">// uma música no catálogo</span>
+{
+  <span class="k">"id"</span>: "exemplo-cancao",
+  <span class="k">"title"</span>: "Canção Exemplo",
+  <span class="k">"artist"</span>: "Artista",
+  <span class="k">"sources"</span>: {
+    <span class="k">"original"</span>: {
+      "type": "youtube",
+      "videoId": "XXXXXXXXXXX",
+      "offsetMs": 1350
+    },
+    <span class="k">"instrumental"</span>: {    <span class="c">// v2</span>
+      "type": "youtube",
+      "videoId": "YYYYYYYYYYY",
+      "offsetMs": 4200
+    }
+  },
+  <span class="k">"lyrics"</span>: {
+    "lrclibId": 123456,
+    "sync": "word",        <span class="c">// line | estimated | word</span>
+    <span class="c">// só os tempos; o texto vem do LRCLIB</span>
+    "wordTimes": [[12.34, 12.61, 12.90], ...]
+  }
+}</pre>
+    </div>
+    <p class="prose" style="color:var(--muted)">Repare que o catálogo guarda só a referência ao LRCLIB e os tempos, não o texto da letra. Assim o repositório público não redistribui letras protegidas; o texto é baixado na hora pelo navegador.</p>
+    <ul class="clean prose">
+      <li><b>Stack:</b> Vite + TypeScript + React. Svelte também serviria e geraria um app menor; React foi escolhido pelo ecossistema maior.</li>
+      <li><b>Rotas:</b> <code>HashRouter</code> (<code>/#/musica/id</code>), porque o GitHub Pages não tem fallback para apps de página única.</li>
+      <li><b>PWA:</b> <code>vite-plugin-pwa</code> para instalar na tela inicial e guardar o app em cache (as músicas continuam precisando de internet).</li>
+      <li><b>Deploy:</b> GitHub Actions faz build a cada push na <code>main</code> e publica no Pages. No plano grátis do GitHub, o Pages exige repositório público.</li>
+      <li><b>Testes:</b> Vitest para o parser de LRC, a estimativa de palavras e a busca na timeline, que são as partes com lógica de verdade.</li>
+    </ul>
+  </section>
+
+  <!-- ================= ROADMAP ================= -->
+  <section class="section" aria-labelledby="road-h">
+    <header>
+      <span class="eyebrow">Fases</span>
+      <h2 id="road-h">Ordem de desenvolvimento</h2>
+    </header>
+    <p class="prose">Estimativas em dias de trabalho para uma pessoa, desenvolvendo com apoio do Claude. Cada fase termina com algo que dá para usar e testar no celular.</p>
+    <div class="phases">
+      <div class="phase">
+        <div class="head"><h3>F0 · Prova de conceito</h3><span class="dur">1 a 2 dias</span></div>
+        <ul>
+          <li>Página única: um vídeo do YouTube fixo + uma letra LRC do LRCLIB, sincronizada por linha.</li>
+          <li>Relógio interpolado e medição do atraso real em iPhone, Android e desktop.</li>
+          <li>Publicação inicial no GitHub Pages.</li>
+        </ul>
+        <p class="done">Pronto quando: a linha troca no tempo certo (erro &lt; 150 ms) nos três aparelhos.</p>
+      </div>
+      <div class="phase">
+        <div class="head"><h3>F1 · MVP</h3><span class="dur">5 a 7 dias</span></div>
+        <ul>
+          <li>Biblioteca com catálogo JSON e busca.</li>
+          <li>Palco no estilo Spotify: rolagem automática, palavra estimada (nível 2), layouts celular e desktop.</li>
+          <li>“Adicionar música”: colar link do YouTube, buscar a letra no LRCLIB, escolher a versão certa.</li>
+          <li>Calibração do atraso por toque e ajuste fino ±; latência global.</li>
+          <li>PWA, Wake Lock, tratamento de vídeo bloqueado e autoplay bloqueado.</li>
+        </ul>
+        <p class="done">Pronto quando: dá para fazer uma noite de karaokê com 20 músicas cadastradas.</p>
+      </div>
+      <div class="phase">
+        <div class="head"><h3>F2 · Palavra exata</h3><span class="dur">3 a 5 dias</span></div>
+        <ul>
+          <li>Editor de sincronia “toque no ritmo”, com velocidade reduzida e ajuste fino por palavra.</li>
+          <li>Uso automático da sincronia por palavra do LRCLIB quando existir.</li>
+          <li>Exportar e importar sincronias; promover para o catálogo do repositório.</li>
+        </ul>
+        <p class="done">Pronto quando: as músicas favoritas têm sincronia nível 3.</p>
+      </div>
+      <div class="phase v2">
+        <div class="head"><h3>F3 · v2: com voz / só trilha</h3><span class="dur">3 a 5 dias (+3 a 5 com áudio local)</span></div>
+        <ul>
+          <li>Cada música com dois vídeos: original e versão karaokê/instrumental do YouTube, cada um com seu atraso.</li>
+          <li>Botão para alternar no meio da música, mantendo a posição.</li>
+          <li>Opcional: modo de arquivos locais com voz separada por Demucs e controle de volume da voz guia.</li>
+        </ul>
+      </div>
+      <div class="phase v2">
+        <div class="head"><h3>F4 · Ideias para depois</h3><span class="dur">a definir</span></div>
+        <ul>
+          <li>Fila de músicas da festa e modo “próximo cantor”.</li>
+          <li>Celular como controle remoto da TV (exigiria um serviço de sinalização, fora do GitHub Pages).</li>
+          <li>Pontuação por afinação com o microfone (Web Audio + detecção de pitch).</li>
+          <li>Letras em dueto, com cores diferentes por cantor.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= V2 ================= -->
+  <section class="section" aria-labelledby="v2-h">
+    <header>
+      <span class="eyebrow">Planejamento antecipado</span>
+      <h2 id="v2-h">Como fazer a versão só com a trilha</h2>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Caminho</th><th>Veredito</th><th>Como funciona</th><th>Custo e limites</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>A · Dois vídeos do YouTube</td>
+            <td><span class="pill ok">Recomendado</span></td>
+            <td>A música aponta para o clipe original e para um vídeo karaokê/instrumental já existente. Trocar de versão troca o vídeo e pula para o mesmo ponto.</td>
+            <td>Zero processamento e dentro das regras. Cada vídeo precisa de calibração própria, e a qualidade depende do vídeo escolhido. Muitos vídeos karaokê já mostram a letra na imagem, o que pode conflitar visualmente.</td>
+          </tr>
+          <tr>
+            <td>B · Arquivos locais + Demucs offline</td>
+            <td><span class="pill acc">Modo avançado</span></td>
+            <td>Um script Python separa voz e instrumental dos seus arquivos. O app toca as duas faixas juntas com controle de volume da voz (0% = karaokê, 30% = voz guia).</td>
+            <td>Melhor experiência e tempo preciso. Requer os arquivos e um computador para processar. Os arquivos ficam no aparelho, não no repositório.</td>
+          </tr>
+          <tr>
+            <td>C · Demucs no navegador</td>
+            <td><span class="pill warn">Experimental</span></td>
+            <td>Mesmo do B, mas a separação roda no próprio navegador com WebGPU (onnxruntime-web).</td>
+            <td>Modelo de algumas centenas de MB para baixar; cerca de 3× mais rápido que o tempo real em desktop com WebGPU, muito lento em celular.</td>
+          </tr>
+          <tr>
+            <td>D · Remover a voz do vídeo do YouTube</td>
+            <td><span class="pill bad">Proibido</span></td>
+            <td>Processar o áudio do player para cancelar a voz.</td>
+            <td>Viola a política do YouTube (separar ou modificar o áudio). Tecnicamente o iframe nem permite acessar o áudio.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= RISCOS ================= -->
+  <section class="section" aria-labelledby="risk-h">
+    <header>
+      <span class="eyebrow">O que pode dar errado</span>
+      <h2 id="risk-h">Riscos e como lidar</h2>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Risco</th><th>Impacto</th><th>Mitigação</th></tr></thead>
+        <tbody>
+          <tr><td>Vídeo com incorporação bloqueada pelo dono (erros 101/150)</td><td><span class="pill warn">Médio</span></td><td>Detectar o erro e pedir outro vídeo; guardar um vídeo reserva por música.</td></tr>
+          <tr><td>Anúncio no meio da música</td><td><span class="pill warn">Médio</span></td><td>O relógio pausa a letra quando o player sai do estado “tocando” e retoma junto. Não é permitido bloquear anúncios.</td></tr>
+          <tr><td>Letra do LRCLIB fora de sincronia ou de outra versão</td><td><span class="pill warn">Médio</span></td><td>Buscar pela duração do vídeo (±2 s), mostrar alternativas, calibração do atraso e editor.</td></tr>
+          <tr><td>Estimativa por palavra imprecisa em notas longas</td><td><span class="pill ok">Baixo</span></td><td>É só visual; o editor corrige as músicas mais cantadas.</td></tr>
+          <tr><td>Atraso de áudio em Bluetooth ou TV</td><td><span class="pill ok">Baixo</span></td><td>Ajuste global de latência salvo por aparelho.</td></tr>
+          <tr><td>Direitos autorais das letras em repositório público</td><td><span class="pill warn">Médio</span></td><td>Guardar só referência e tempos; o texto vem do LRCLIB em tempo real.</td></tr>
+          <tr><td>LRCLIB fora do ar ou mudança na API</td><td><span class="pill ok">Baixo</span></td><td>Cache da letra no IndexedDB após o primeiro uso.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= DECISÕES ================= -->
+  <section class="section" aria-labelledby="dec-h">
+    <header>
+      <span class="eyebrow">Para você revisar</span>
+      <h2 id="dec-h">Decisões antes de começar</h2>
+    </header>
+    <div class="decisions">
+      <div class="decision"><span class="q">Fonte de áudio da v1</span><span class="rec">Recomendo <b>YouTube embutido</b>, aceitando o layout sem sobreposição.</span></div>
+      <div class="decision"><span class="q">Letras no repositório?</span><span class="rec">Recomendo <b>guardar só tempos + id do LRCLIB</b>. Alternativa: letras completas, se o uso for estritamente pessoal.</span></div>
+      <div class="decision"><span class="q">Stack de front-end</span><span class="rec">Recomendo <b>Vite + TypeScript + React</b>. Alternativa: Svelte, se preferir algo mais enxuto.</span></div>
+      <div class="decision"><span class="q">Repositório público no GitHub Pages</span><span class="rec">Necessário no plano grátis. Se quiser privado, precisa do GitHub Pro ou outro host estático (Cloudflare Pages, Netlify).</span></div>
+      <div class="decision"><span class="q">Caminho da v2</span><span class="rec">Recomendo <b>A (dois vídeos)</b> primeiro, e <b>B (arquivos locais)</b> só se a qualidade não bastar.</span></div>
+      <div class="decision"><span class="q">Principal forma de uso</span><span class="rec">Festa com TV, uso individual no celular, ou ambos? Isso define qual layout recebe mais atenção na F1.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= FONTES ================= -->
+  <section class="section sources" aria-labelledby="src-h">
+    <header><span class="eyebrow">Pesquisa</span><h2 id="src-h" style="font-size:1.2rem">Fontes consultadas</h2></header>
+    <ul>
+      <li><a href="https://developers.google.com/youtube/terms/developer-policies" target="_blank" rel="noopener">YouTube API Services: Developer Policies</a> (áudio, sobreposição, download, reprodução em segundo plano)</li>
+      <li><a href="https://developers.google.com/youtube/terms/required-minimum-functionality" target="_blank" rel="noopener">YouTube: Required Minimum Functionality</a> (tamanho mínimo, sem sobreposições, autoplay)</li>
+      <li><a href="https://developers.google.com/youtube/iframe_api_revision_history" target="_blank" rel="noopener">YouTube IFrame Player API: histórico de revisões</a> (onAutoplayBlocked, erro 153)</li>
+      <li><a href="https://lrclib.net/docs" target="_blank" rel="noopener">LRCLIB: documentação da API</a> (endpoints, CORS, limites, hasWordSync)</li>
+      <li><a href="https://developer.spotify.com/policy/" target="_blank" rel="noopener">Spotify Developer Policy</a> (proibição de sincronizar com conteúdo visual)</li>
+      <li><a href="https://syncalong.readthedocs.io/en/latest/how-it-works/" target="_blank" rel="noopener">syncalong: como funciona</a> e <a href="https://www.isca-archive.org/interspeech_2023/bain23_interspeech.pdf" target="_blank" rel="noopener">WhisperX (Interspeech 2023)</a></li>
+      <li><a href="https://github.com/timcsy/demucs-web" target="_blank" rel="noopener">demucs-web</a>, <a href="https://github.com/bakkot/demucs-js" target="_blank" rel="noopener">demucs-js</a> e <a href="https://pypi.org/project/demucs-onnx/0.1.0/" target="_blank" rel="noopener">demucs-onnx</a> (separação de voz no navegador)</li>
+      <li><a href="https://github.com/sfarhat/Karaoke" target="_blank" rel="noopener">sfarhat/Karaoke</a>, <a href="https://github.com/binimum/am-lyrics" target="_blank" rel="noopener">am-lyrics</a> e <a href="https://www.pkgstats.com/pkg:karaoke-reader" target="_blank" rel="noopener">karaoke-reader</a> (projetos de referência)</li>
+      <li><a href="https://lists.w3.org/Archives/Public/public-web-and-tv/2018Jun/0040.html" target="_blank" rel="noopener">W3C Web & TV: discussão sobre imprecisão do currentTime</a> (base do relógio interpolado)</li>
+    </ul>
+  </section>
+
+  <footer>Plano preparado para revisão. Os prazos são estimativas; a F0 serve justamente para validar a sincronia nos seus aparelhos antes de investir no resto.</footer>
+</div>
+
+<script>
+(function () {
+  // Letra de exemplo, escrita para esta demo. Tempos por linha, em segundos.
+  var LINES = [
+    [0.6, 3.4, "Acende a luz do palco agora"],
+    [3.6, 6.4, "Cada palavra chega na hora"],
+    [6.6, 9.6, "Segue o brilho sem perder o tom"],
+    [9.8, 12.6, "Canta comigo esse novo som"],
+    [12.8, 15.8, "A letra corre e você acompanha"],
+    [16.0, 19.2, "No karaokê ninguém se acanha"]
+  ];
+  var LOOP = 20.5, LINE_H = 64, VIEW_H = 260;
+  var track = document.getElementById("track");
+  var clockEl = document.getElementById("demo-clock");
+  var btn = document.getElementById("demo-play");
+  var restart = document.getElementById("demo-restart");
+
+  // Nível 2: divide o tempo da linha entre as palavras pelo número de letras.
+  var model = LINES.map(function (l) {
+    var words = l[2].split(" ");
+    var total = words.reduce(function (s, w) { return s + w.length + 1; }, 0);
+    var t = l[0], dur = l[1] - l[0];
+    var el = document.createElement("div");
+    el.className = "lyr";
+    var ws = words.map(function (w) {
+      var d = dur * (w.length + 1) / total;
+      var span = document.createElement("span");
+      span.className = "w"; span.textContent = w;
+      el.appendChild(span);
+      var o = { start: t, end: t + d, el: span }; t += d; return o;
+    });
+    track.appendChild(el);
+    return { start: l[0], end: l[1], el: el, words: ws };
+  });
+
+  var playing = true, mediaT = 0, wallT = performance.now(), current = -1;
+  function now() { return playing ? mediaT + (performance.now() - wallT) / 1000 : mediaT; }
+  function fmt(t) { var m = Math.floor(t / 60), s = t - m * 60; return String(m).padStart(2, "0") + ":" + s.toFixed(2).padStart(5, "0"); }
+  function findLine(t) { // busca binária: última linha com start <= t
+    var lo = 0, hi = model.length - 1, ans = -1;
+    while (lo <= hi) { var mid = (lo + hi) >> 1; if (model[mid].start <= t) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+    return ans;
+  }
+  function frame() {
+    var t = now();
+    if (t >= LOOP) { mediaT = 0; wallT = performance.now(); t = 0; }
+    clockEl.textContent = fmt(t);
+    var idx = findLine(t);
+    if (idx !== current) {
+      model.forEach(function (m, i) {
+        m.el.classList.toggle("now", i === idx);
+        m.el.classList.toggle("past", i < idx);
+        if (i !== idx) m.words.forEach(function (w) { w.el.style.removeProperty("--p"); });
+      });
+      var focus = Math.max(idx, 0);
+      track.style.transform = "translateY(" + (VIEW_H / 2 - LINE_H / 2 - focus * LINE_H) + "px)";
+      current = idx;
+    }
+    if (idx >= 0) {
+      model[idx].words.forEach(function (w) {
+        var p = t <= w.start ? 0 : t >= w.end ? 100 : (t - w.start) / (w.end - w.start) * 100;
+        w.el.style.setProperty("--p", p.toFixed(1) + "%");
+      });
+    }
+    requestAnimationFrame(frame);
+  }
+  btn.addEventListener("click", function () {
+    mediaT = now(); wallT = performance.now(); playing = !playing;
+    btn.textContent = playing ? "Pausar" : "Tocar";
+  });
+  restart.addEventListener("click", function () {
+    mediaT = 0; wallT = performance.now(); current = -2;
+  });
+  track.style.transform = "translateY(" + (VIEW_H / 2 - LINE_H / 2) + "px)";
+  requestAnimationFrame(frame);
+})();
+</script>
