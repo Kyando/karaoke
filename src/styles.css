@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@500;700&family=Noto+Sans+KR:wght@700&display=swap');
 
 /* Palco escuro de propósito: o app é usado com luz baixa e projetado na TV. */
 :root {
@@ -134,6 +134,15 @@ input, select {
 .good { color: var(--good); }
 .bad { color: var(--bad); }
 .alert { margin: 0; color: var(--bad); font-size: 0.88rem; }
+.segmented { display: flex; flex-wrap: wrap; gap: 4px; background: var(--bg); border-radius: 10px; padding: 3px; }
+.segmented button {
+  flex: 1 1 auto; border: 0; background: none; border-radius: 8px; padding: 6px 10px;
+  font-size: 0.82rem; color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.segmented button.on { background: var(--panel); color: var(--fg); font-weight: 600; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; cursor: pointer; }
+.check input { width: auto; accent-color: var(--accent); }
+.notice { margin: 0; font-size: 0.85rem; line-height: 1.45; color: var(--fg); background: rgba(255, 92, 147, 0.12); border-radius: 8px; padding: 8px 10px; }
 
 .debug dl { margin: 8px 0; display: grid; gap: 4px; font-size: 0.82rem; }
 .debug dl div { display: flex; justify-content: space-between; gap: 12px; }
@@ -156,13 +165,27 @@ input, select {
   font-size: clamp(1.5rem, 3.4vw + 0.6rem, 3.1rem);
   line-height: 1.18; letter-spacing: -0.01em;
   padding: 0.28em 0;
-  display: flex; flex-wrap: wrap; gap: 0 0.28em;
   opacity: 0.38; cursor: pointer;
   transition: opacity 0.3s, transform 0.3s;
   transform-origin: left center;
 }
-.lyric-line.is-past { opacity: 0.55; }
-.lyric-line.is-current { opacity: 1; }
+.lyric-row, .roman-row { display: flex; flex-wrap: wrap; gap: 0 0.28em; }
+/* A fonte de títulos só tem letras latinas; kana/kanji/hangul caem na fonte do idioma. */
+.lyric-row.lang-ja { font-family: 'Bricolage Grotesque', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif; }
+.lyric-row.lang-ko { font-family: 'Bricolage Grotesque', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+.lyric-row.has-ruby { gap: 0 0.12em; padding-top: 0.15em; }
+.lyric-row ruby { ruby-position: over; }
+.lyric-row rt {
+  font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+  font-size: 0.42em; font-weight: 500; letter-spacing: 0;
+  color: var(--muted); -webkit-text-fill-color: var(--muted);
+}
+.lyric-line.is-current .lyric-row rt { color: var(--fg); -webkit-text-fill-color: var(--fg); }
+.roman-row {
+  font-family: var(--font-body); font-weight: 500;
+  font-size: 0.48em; letter-spacing: 0.01em; line-height: 1.35;
+  margin-top: 0.2em; gap: 0 0.4em;
+}
 .lyric-line .word {
   --p: 0%;
   background: linear-gradient(90deg, var(--accent) var(--p), var(--unsung) var(--p));

@@ -1,6 +1,6 @@
 const API = 'https://lrclib.net/api'
 // O LRCLIB pede que o cliente se identifique; no navegador isso vai neste header.
-const CLIENT = 'karaoke-web/0.0.1'
+const CLIENT = 'karaoke-web/0.0.1 (https://github.com/Kyando/karaoke)'
 
 export interface LrclibRecord {
   id: number
@@ -23,16 +23,53 @@ export async function searchLyrics(track: string, artist: string, signal?: Abort
 }
 
 /**
- * Ordena para a melhor letra vir primeiro: com sincronia, depois a duração mais próxima
- * da duração do vídeo (videoclipes costumam ser alguns segundos mais longos).
+ * Uma sincronização distinta. O LRCLIB repete a mesma letra sincronizada em dezenas de
+ * álbuns (coletâneas, remasters) com durações diferentes, então a duração de um registro
+ * isolado não diz para qual versão da música a letra foi feita. Agrupando as cópias, a
+ * duração mais comum do grupo é a melhor estimativa da versão original.
  */
-export function rankByDuration(records: LrclibRecord[], videoDuration: number | null): LrclibRecord[] {
-  return [...records]
-    .filter((r) => !r.instrumental)
-    .sort((a, b) => {
-      const syncDiff = Number(!!b.syncedLyrics) - Number(!!a.syncedLyrics)
-      if (syncDiff) return syncDiff
-      if (videoDuration == null) return 0
-      return Math.abs(a.duration - videoDuration) - Math.abs(b.duration - videoDuration)
-    })
+export interface LyricsVersion {
+  /** Registro representante (o de duração mais próxima da típica). */
+  record: LrclibRecord
+  ids: number[]
+  copies: number
+  /** Duração mais comum entre as cópias, em segundos inteiros. */
+  typicalDuration: number
+}
+
+export function groupVersions(records: LrclibRecord[]): LyricsVersion[] {
+  const groups = new Map<string, LrclibRecord[]>()
+  for (const r of records) {
+    if (!r.syncedLyrics || r.instrumental) continue
+    const key = r.syncedLyrics.trim()
+    groups.set(key, [...(groups.get(key) ?? []), r])
+  }
+  return [...groups.values()].map((recs) => {
+    const typicalDuration = mode(recs.map((r) => Math.round(r.duration)))
+    const record = [...recs].sort(
+      (a, b) => Math.abs(a.duration - typicalDuration) - Math.abs(b.duration - typicalDuration),
+    )[0]
+    return { record, ids: recs.map((r) => r.id), copies: recs.length, typicalDuration }
+  })
+}
+
+/** Diferenças de duração até isso contam como "mesma versão" (arredondamentos, silêncio no fim). */
+const SAME_DURATION_SECONDS = 2
+
+/**
+ * Melhor versão primeiro: a de duração típica mais próxima do vídeo; entre as que batem
+ * com o vídeo (ou empatam), a mais copiada, que tende a ser a sincronização mais usada.
+ */
+export function rankVersions(versions: LyricsVersion[], videoDuration: number | null): LyricsVersion[] {
+  const distance = (v: LyricsVersion) =>
+    videoDuration == null ? 0 : Math.max(0, Math.abs(v.typicalDuration - videoDuration) - SAME_DURATION_SECONDS)
+  return [...versions].sort((a, b) => distance(a) - distance(b) || b.copies - a.copies)
+}
+
+function mode(values: number[]): number {
+  const counts = new Map<number, number>()
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
+  let best = values[0]
+  for (const [v, n] of counts) if (n > (counts.get(best) ?? 0)) best = v
+  return best
 }

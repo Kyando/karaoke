@@ -34,7 +34,16 @@ Não. Qualquer música funciona na hora, desde que:
 
 O único ajuste por música é o **atraso** entre vídeo e letra, quando o vídeo tem introdução diferente da versão de estúdio. Lyric videos oficiais e "áudio oficial" geralmente batem sem ajuste. Na F0 o atraso fica salvo só no navegador de quem calibrou; na F1 ele passa a ser salvo no catálogo do repositório, para valer em todos os aparelhos.
 
-As músicas de teste ficam em [src/catalog/testSongs.ts](src/catalog/testSongs.ts).
+As músicas de teste ficam em [src/catalog/testSongs.ts](src/catalog/testSongs.ts), com o atraso já calibrado quando o vídeo tem introdução (ex.: os lyric videos de KPop Demon Hunters).
+
+O LRCLIB repete a mesma sincronização em dezenas de álbuns com durações diferentes, então o app agrupa as cópias e usa a duração mais comum como a da versão original. Quando o vídeo tem duração bem diferente, o painel avisa para calibrar.
+
+## Coreano e japonês
+
+Letras com hangul ou kana ganham a pronúncia em letras latinas logo abaixo de cada linha (opção em **Ajustes → Pronúncia**: original + pronúncia, só pronúncia ou só original). No japonês, a leitura em kana aparece sobre os kanjis (furigana) e as palavras são separadas para o destaque seguir o canto.
+
+- Coreano: [es-hangul](https://github.com/toss/es-hangul), seguindo a pronúncia (같이 → gachi).
+- Japonês: [kuromoji](https://github.com/takuyaa/kuromoji.js) + [wanakana](https://wanakana.com). O dicionário tem ~17 MB e só é baixado na primeira música em japonês. Leituras de kanji podem errar em palavras poéticas ou nomes; as mais comuns em letras (二人, 一人…) têm correção própria em `src/lyrics/japanese.ts`.
 
 ## Testando a F0
 

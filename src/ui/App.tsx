@@ -2,17 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MediaClock } from '../player/clock'
 import type { PlayerAdapter, PlayerState } from '../player/PlayerAdapter'
 import { createYouTubePlayer, parseVideoId } from '../player/YouTubePlayer'
-import { rankByDuration, searchLyrics, type LrclibRecord } from '../lyrics/lrclib'
+import { groupVersions, rankVersions, searchLyrics, type LrclibRecord } from '../lyrics/lrclib'
 import { parseLrc } from '../lyrics/parseLrc'
 import { firstSungLine, median, tapDeviation } from '../lyrics/calibration'
-import type { Line } from '../lyrics/types'
-import { LyricsView } from './LyricsView'
+import type { Line, Lyrics } from '../lyrics/types'
+import { detectScript, transliterate } from '../lyrics/transliterate'
+import { LyricsView, type DisplayOptions, type Pronunciation } from './LyricsView'
 import { DebugPanel } from './DebugPanel'
 import { TEST_SONGS } from '../catalog/testSongs'
 
 const POLL_MS = 250
 /** Meta da F0: erro de sincronia abaixo disso. */
 const TARGET_MS = 150
+/** A partir dessa diferença de duração entre vídeo e música, sugerimos calibrar. */
+const DURATION_WARN_SECONDS = 3
 
 const DEFAULT_SONG = TEST_SONGS.find((s) => s.title === 'Golden') ?? TEST_SONGS[0]
 const DEFAULT = {
@@ -31,21 +34,50 @@ function initialForm() {
   }
 }
 
-const offsetKey = (videoId: string, lrclibId: number) => `karaoke:offset:${videoId}:${lrclibId}`
+/** Hash curto do texto da letra: identifica a sincronização, não o registro do LRCLIB. */
+function lyricsHash(text: string): string {
+  let h = 5381
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0
+  return (h >>> 0).toString(36)
+}
 
-function loadOffset(videoId: string, lrclibId: number): number {
+const offsetKey = (videoId: string, lyricsId: string) => `karaoke:offset:${videoId}:${lyricsId}`
+
+/** Atraso salvo neste navegador; se não houver, o calibrado no catálogo de teste. */
+function loadOffset(videoId: string, lyricsId: string): number {
+  const fallback = TEST_SONGS.find((s) => s.videoId === videoId)?.offsetMs ?? 0
   try {
-    return Number(localStorage.getItem(offsetKey(videoId, lrclibId))) || 0
+    const saved = localStorage.getItem(offsetKey(videoId, lyricsId))
+    return saved === null ? fallback : Number(saved) || 0
   } catch {
-    return 0
+    return fallback
   }
 }
 
-function saveOffset(videoId: string, lrclibId: number, ms: number) {
+function saveOffset(videoId: string, lyricsId: string, ms: number) {
   try {
-    localStorage.setItem(offsetKey(videoId, lrclibId), String(Math.round(ms)))
+    localStorage.setItem(offsetKey(videoId, lyricsId), String(Math.round(ms)))
   } catch {
     /* modo privado: segue sem salvar */
+  }
+}
+
+const DISPLAY_KEY = 'karaoke:display'
+const DEFAULT_DISPLAY: DisplayOptions = { pronunciation: 'below', furigana: true }
+
+function loadDisplay(): DisplayOptions {
+  try {
+    return { ...DEFAULT_DISPLAY, ...JSON.parse(localStorage.getItem(DISPLAY_KEY) ?? '{}') }
+  } catch {
+    return DEFAULT_DISPLAY
+  }
+}
+
+function saveDisplay(d: DisplayOptions) {
+  try {
+    localStorage.setItem(DISPLAY_KEY, JSON.stringify(d))
+  } catch {
+    /* sem armazenamento: vale só nesta sessão */
   }
 }
 
@@ -78,10 +110,41 @@ export function App() {
   const [player, setPlayer] = useState<PlayerAdapter | null>(null)
   const clock = useMemo(() => new MediaClock(), [])
 
-  const ranked = useMemo(() => rankByDuration(candidates, duration), [candidates, duration])
-  const selected = ranked.find((r) => r.id === selectedId) ?? null
+  const versions = useMemo(() => groupVersions(candidates), [candidates])
+  const ranked = useMemo(() => rankVersions(versions, duration), [versions, duration])
+  const selectedVersion = ranked.find((v) => selectedId !== null && v.ids.includes(selectedId)) ?? null
+  const selected = selectedVersion?.record ?? null
+  const lyricsId = useMemo(() => (selected?.syncedLyrics ? lyricsHash(selected.syncedLyrics) : null), [selected])
   const lyrics = useMemo(() => (selected?.syncedLyrics ? parseLrc(selected.syncedLyrics) : null), [selected])
   const lines = lyrics?.lines ?? []
+
+  // Romanização/furigana: chega depois (o japonês precisa baixar o dicionário na 1ª vez).
+  const script = useMemo(() => detectScript(lines), [lines])
+  const [annotated, setAnnotated] = useState<{ source: Lyrics; lines: Line[] } | null>(null)
+  const [annotateStatus, setAnnotateStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [display, setDisplay] = useState<DisplayOptions>(loadDisplay)
+  useEffect(() => {
+    if (!lyrics || !script) return
+    let cancelled = false
+    setAnnotateStatus('loading')
+    transliterate(lyrics)
+      .then((out) => {
+        if (cancelled) return
+        setAnnotated({ source: lyrics, lines: out.lines })
+        setAnnotateStatus('idle')
+      })
+      .catch(() => !cancelled && setAnnotateStatus('error'))
+    return () => {
+      cancelled = true
+    }
+  }, [lyrics, script])
+  const displayLines = annotated?.source === lyrics ? annotated.lines : lines
+  const changeDisplay = (next: DisplayOptions) => {
+    setDisplay(next)
+    saveDisplay(next)
+  }
+  /** Diferença entre vídeo e música; videoclipes com introdução extra deixam a letra adiantada. */
+  const durationGap = duration && selectedVersion ? duration - selectedVersion.typicalDuration : null
 
   // Deslocamento total: lyricTime = videoTime − shift
   const shiftRef = useRef(0)
@@ -129,14 +192,14 @@ export function App() {
   // a pessoa escolhe uma letra na lista ou abre um link com ?lrclib=.
   useEffect(() => {
     if (!ranked.length) return
-    const keep = manualPick && ranked.some((r) => r.id === selectedId && r.syncedLyrics)
-    if (!keep && ranked[0].id !== selectedId) setSelectedId(ranked[0].id)
-  }, [ranked, selectedId, manualPick])
+    const keep = manualPick && selectedVersion !== null
+    if (!keep && ranked[0] !== selectedVersion) setSelectedId(ranked[0].record.id)
+  }, [ranked, selectedVersion, manualPick])
 
   // atraso salvo para este par vídeo + letra
   useEffect(() => {
-    if (videoId && selected) setOffsetMs(loadOffset(videoId, selected.id))
-  }, [videoId, selected])
+    if (videoId && lyricsId) setOffsetMs(loadOffset(videoId, lyricsId))
+  }, [videoId, lyricsId])
 
   // mantém o link compartilhável com a letra escolhida
   useEffect(() => {
@@ -148,7 +211,7 @@ export function App() {
 
   const changeOffset = (ms: number) => {
     setOffsetMs(ms)
-    if (videoId && selected) saveOffset(videoId, selected.id, ms)
+    if (videoId && lyricsId) saveOffset(videoId, lyricsId, ms)
   }
 
   // ---- player ----
@@ -343,7 +406,7 @@ export function App() {
 
         <section className="lyrics-pane" aria-label="Letra">
           {lines.length > 0 ? (
-            <LyricsView lines={lines} getLyricTime={getLyricTime} onLineClick={seekToLine} />
+            <LyricsView lines={displayLines} getLyricTime={getLyricTime} display={display} onLineClick={seekToLine} />
           ) : (
             <p className="empty">{searching ? 'Buscando a letra…' : error ?? 'Carregue uma música para começar.'}</p>
           )}
@@ -384,20 +447,74 @@ export function App() {
             {ranked.length > 0 && (
               <div className="panel">
                 <h2>Letra (LRCLIB)</h2>
-                <select id="lyrics-choice" value={selectedId ?? ''} onChange={(e) => {
+                <select
+                  id="lyrics-choice"
+                  value={selected?.id ?? ''}
+                  onChange={(e) => {
                     setManualPick(true)
                     setSelectedId(Number(e.target.value))
-                  }}>
-                  {ranked.map((r) => (
-                    <option key={r.id} value={r.id} disabled={!r.syncedLyrics}>
-                      {r.artistName} · {r.albumName || 'sem álbum'} · {fmtDuration(r.duration)}
-                      {r.syncedLyrics ? '' : ' · sem sincronia'}
+                  }}
+                >
+                  {ranked.map((v, i) => (
+                    <option key={v.record.id} value={v.record.id}>
+                      Versão {i + 1} · {fmtDuration(v.typicalDuration)} · {v.record.artistName}
+                      {v.copies > 1 ? ` · em ${v.copies} álbuns` : ''}
                     </option>
                   ))}
                 </select>
                 <p className="hint">
-                  Vídeo: {duration ? fmtDuration(duration) : '—'} · Letra: {selected ? fmtDuration(selected.duration) : '—'}
+                  Vídeo: {duration ? fmtDuration(duration) : '—'} · Música: {selectedVersion ? fmtDuration(selectedVersion.typicalDuration) : '—'}
+                  {versions.length > 1 ? ` · ${versions.length} sincronizações diferentes` : ''}
                 </p>
+                {durationGap !== null && Math.abs(durationGap) >= DURATION_WARN_SECONDS && offsetMs === 0 && (
+                  <p className="notice">
+                    O vídeo tem {Math.abs(Math.round(durationGap))} s {durationGap > 0 ? 'a mais' : 'a menos'} que a música.
+                    Se a letra estiver fora do tempo, use <b>Marcar 1ª linha</b> abaixo.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {script && (
+              <div className="panel">
+                <h2>Pronúncia ({script === 'ja' ? 'japonês' : 'coreano'})</h2>
+                <div className="segmented" role="radiogroup" aria-label="Mostrar pronúncia">
+                  {(
+                    [
+                      ['below', 'Original + pronúncia'],
+                      ['only', 'Só pronúncia'],
+                      ['off', 'Só original'],
+                    ] as [Pronunciation, string][]
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={display.pronunciation === value}
+                      className={display.pronunciation === value ? 'on' : ''}
+                      onClick={() => changeDisplay({ ...display, pronunciation: value })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {script === 'ja' && (
+                  <label className="check">
+                    <input
+                      id="furigana"
+                      type="checkbox"
+                      checked={display.furigana}
+                      onChange={(e) => changeDisplay({ ...display, furigana: e.target.checked })}
+                    />
+                    Leitura em kana sobre os kanjis (furigana)
+                  </label>
+                )}
+                {annotateStatus === 'loading' && (
+                  <p className="hint">
+                    {script === 'ja' ? 'Baixando o dicionário japonês (~17 MB, só na primeira vez)…' : 'Preparando a romanização…'}
+                  </p>
+                )}
+                {annotateStatus === 'error' && <p className="alert">Não foi possível preparar a pronúncia. Recarregue a página para tentar de novo.</p>}
               </div>
             )}
 

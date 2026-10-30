@@ -13,11 +13,29 @@ const MIN_LINE_SECONDS = 1.2
  */
 export function estimateWords(text: string, start: number, end: number): Word[] {
   const pieces = text.split(/\s+/).filter(Boolean)
-  if (pieces.length === 0) return []
+  return estimateWeighted(
+    pieces,
+    pieces.map((p) => p.length + 1),
+    start,
+    end,
+    SECONDS_PER_CHAR,
+  )
+}
 
-  const weights = pieces.map((p) => p.length + 1)
+/**
+ * Versão genérica: cada pedaço tem um peso (letras, sílabas...) e `secondsPerUnit` diz
+ * quanto tempo uma unidade de peso leva para ser cantada.
+ */
+export function estimateWeighted(
+  pieces: string[],
+  weights: number[],
+  start: number,
+  end: number,
+  secondsPerUnit: number,
+): Word[] {
+  if (pieces.length === 0) return []
   const totalWeight = weights.reduce((a, b) => a + b, 0)
-  const sungDuration = Math.min(end - start, Math.max(MIN_LINE_SECONDS, totalWeight * SECONDS_PER_CHAR))
+  const sungDuration = Math.min(end - start, Math.max(MIN_LINE_SECONDS, totalWeight * secondsPerUnit))
 
   const words: Word[] = []
   let t = start

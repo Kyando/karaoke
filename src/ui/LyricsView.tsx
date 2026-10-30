@@ -1,28 +1,62 @@
-import { useEffect, useRef } from 'react'
-import type { Line } from '../lyrics/types'
+import { useEffect, useRef, type ReactNode } from 'react'
+import type { Line, Word } from '../lyrics/types'
 import { findLineIndex, wordProgress } from '../lyrics/timeline'
+
+/** Como mostrar a pronúncia de letras em coreano/japonês. */
+export type Pronunciation = 'below' | 'only' | 'off'
+
+export interface DisplayOptions {
+  pronunciation: Pronunciation
+  /** Leitura em kana sobre os kanjis (só japonês). */
+  furigana: boolean
+}
 
 interface Props {
   lines: Line[]
   /** Tempo atual na linha do tempo da letra (já com o atraso aplicado). */
   getLyricTime: () => number
+  display: DisplayOptions
   onLineClick?: (line: Line) => void
 }
 
 /** Altura (fração do painel) onde a linha atual fica, como no Spotify. */
 const FOCUS_AT = 0.38
 
+function renderOriginal(w: Word, furigana: boolean): ReactNode {
+  if (!furigana || !w.ruby) return w.text
+  return w.ruby.map((seg, i) =>
+    seg.reading ? (
+      <ruby key={i}>
+        {seg.text}
+        <rt>{seg.reading}</rt>
+      </ruby>
+    ) : (
+      seg.text
+    ),
+  )
+}
+
 /**
- * Renderiza as linhas uma vez com React; a animação por quadro mexe direto no DOM
+ * Renderiza as linhas com React; a animação por quadro mexe direto no DOM
  * (classe da linha e variável --p de cada palavra), sem re-render.
  */
-export function LyricsView({ lines, getLyricTime, onLineClick }: Props) {
+export function LyricsView({ lines, getLyricTime, display, onLineClick }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const lineEls = useRef<(HTMLDivElement | null)[]>([])
-  const wordEls = useRef<(HTMLSpanElement | null)[][]>([])
+  // por linha, por palavra: todos os elementos que acompanham o progresso da palavra
+  const wordEls = useRef<HTMLSpanElement[][][]>([])
   const timeRef = useRef(getLyricTime)
   timeRef.current = getLyricTime
+
+  const register = (i: number, j: number) => (el: HTMLSpanElement | null) => {
+    if (!el) return
+    const perWord = ((wordEls.current[i] ??= [])[j] ??= [])
+    if (!perWord.includes(el)) perWord.push(el)
+  }
+
+  // a cada mudança de letra ou de exibição os elementos são recriados
+  wordEls.current = []
 
   useEffect(() => {
     let raf = 0
@@ -38,6 +72,11 @@ export function LyricsView({ lines, getLyricTime, onLineClick }: Props) {
       track.style.transform = `translate3d(0, ${y}px, 0)`
     }
 
+    const setProgress = (i: number, p: string | null) =>
+      wordEls.current[i]?.forEach((els) =>
+        els.forEach((el) => (p === null ? el.style.removeProperty('--p') : el.style.setProperty('--p', p))),
+      )
+
     const frame = () => {
       const t = timeRef.current()
       const idx = findLineIndex(lines, t)
@@ -48,7 +87,7 @@ export function LyricsView({ lines, getLyricTime, onLineClick }: Props) {
           if (!el) return
           el.classList.toggle('is-current', i === idx)
           el.classList.toggle('is-past', i < idx)
-          if (i !== idx) wordEls.current[i]?.forEach((w) => w?.style.removeProperty('--p'))
+          if (i !== idx) setProgress(i, null)
         })
         scrollTo(idx)
         current = idx
@@ -60,45 +99,65 @@ export function LyricsView({ lines, getLyricTime, onLineClick }: Props) {
       if (idx >= 0) {
         const words = lines[idx].words
         const els = wordEls.current[idx]
-        for (let i = 0; i < words.length; i++) {
-          els?.[i]?.style.setProperty('--p', `${(wordProgress(words[i], t) * 100).toFixed(1)}%`)
+        for (let j = 0; j < words.length; j++) {
+          const p = `${(wordProgress(words[j], t) * 100).toFixed(1)}%`
+          els?.[j]?.forEach((el) => el.style.setProperty('--p', p))
         }
       }
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [lines])
+  }, [lines, display])
 
   return (
     <div className="lyrics" ref={viewportRef}>
       <div className="lyrics-track" ref={trackRef}>
-        {lines.map((line, i) => (
-          <div
-            key={i}
-            className={line.words.length ? 'lyric-line' : 'lyric-line is-gap'}
-            ref={(el) => {
-              lineEls.current[i] = el
-            }}
-            onClick={() => onLineClick?.(line)}
-          >
-            {line.words.length === 0 ? (
-              <span className="gap-note" aria-label="trecho instrumental">♪</span>
-            ) : (
-              line.words.map((w, j) => (
-                <span
-                  key={j}
-                  className="word"
-                  ref={(el) => {
-                    ;(wordEls.current[i] ??= [])[j] = el
-                  }}
-                >
-                  {w.text}
+        {lines.map((line, i) => {
+          const hasRoman = !!line.lang && display.pronunciation !== 'off'
+          const romanOnly = hasRoman && display.pronunciation === 'only'
+          return (
+            <div
+              key={i}
+              className={line.words.length ? 'lyric-line' : 'lyric-line is-gap'}
+              ref={(el) => {
+                lineEls.current[i] = el
+              }}
+              onClick={() => onLineClick?.(line)}
+            >
+              {line.words.length === 0 ? (
+                <span className="gap-note" aria-label="trecho instrumental">
+                  ♪
                 </span>
-              ))
-            )}
-          </div>
-        ))}
+              ) : (
+                <>
+                  <div
+                    className={[
+                      'lyric-row',
+                      line.lang && !romanOnly ? `lang-${line.lang}` : '',
+                      display.furigana && line.lang === 'ja' && !romanOnly ? 'has-ruby' : '',
+                    ].join(' ')}
+                  >
+                    {line.words.map((w, j) => (
+                      <span key={j} className="word" ref={register(i, j)}>
+                        {romanOnly ? (w.roman ?? w.text) : renderOriginal(w, display.furigana)}
+                      </span>
+                    ))}
+                  </div>
+                  {hasRoman && !romanOnly && (
+                    <div className="roman-row" lang="en">
+                      {line.words.map((w, j) => (
+                        <span key={j} className="word" ref={register(i, j)}>
+                          {w.roman ?? w.text}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

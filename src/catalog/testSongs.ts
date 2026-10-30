@@ -10,6 +10,8 @@ export interface TestSong {
   title: string
   artist: string
   videoId: string
+  /** Atraso calibrado (ms) para este vídeo; vale até a pessoa calibrar no próprio aparelho. */
+  offsetMs?: number
   /** Por que esta música está na lista, quando não é óbvio. */
   note?: string
 }
@@ -23,8 +25,8 @@ export const TEST_SONGS: TestSong[] = [
   { group: 'Adele', title: 'Someone Like You', artist: 'Adele', videoId: 'hLQl3WQQoQ0', note: 'videoclipe' },
   { group: 'Adele', title: 'Hello', artist: 'Adele', videoId: 'YQHsXMglC9A', note: 'clipe com introdução longa: teste de calibração' },
 
-  { group: 'HUNTR/X', title: 'Golden', artist: 'HUNTR/X', videoId: 'yebNIHKAC4A' },
-  { group: 'HUNTR/X', title: "How It's Done", artist: 'HUNTR/X', videoId: 'QGsevnbItdU' },
+  { group: 'HUNTR/X', title: 'Golden', artist: 'HUNTR/X', videoId: 'yebNIHKAC4A', offsetMs: 3000, note: 'lyric video: 3 s de introdução' },
+  { group: 'HUNTR/X', title: "How It's Done", artist: 'HUNTR/X', videoId: 'QGsevnbItdU', offsetMs: 6500, note: 'lyric video: ~6,5 s de introdução' },
 
   { group: 'Ed Sheeran', title: 'Perfect', artist: 'Ed Sheeran', videoId: 'iKzRIweSBLA' },
   { group: 'Ed Sheeran', title: 'Shape of You', artist: 'Ed Sheeran', videoId: '_dK2tDK9grQ' },
@@ -33,4 +35,8 @@ export const TEST_SONGS: TestSong[] = [
   { group: 'Persona 5', title: 'Life Will Change', artist: 'Lyn', videoId: '2AWc3DRmj1U' },
   { group: 'Persona 5', title: 'Last Surprise', artist: 'Lyn', videoId: 'ZNGqBDRJgvo' },
   { group: 'Persona 5', title: 'Wake Up, Get Up, Get Out There', artist: 'Lyn', videoId: 'azNG-AU0eGg' },
+  { group: 'Persona 5', title: '星と僕らと', artist: 'Lyn', videoId: 'ghmaEb5mThw', note: 'japonês' },
+
+  { group: 'Japonês', title: '夜に駆ける', artist: 'YOASOBI', videoId: 'by4SYYWlhEs' },
+  { group: 'Japonês', title: '紅蓮華', artist: 'LiSA', videoId: 'x1FV6IrjZCY', note: 'videoclipe' },
 ]

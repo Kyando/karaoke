@@ -4,16 +4,23 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "copy-dict": "node scripts/copy-dict.mjs",
+    "predev": "npm run copy-dict",
     "dev": "vite --host",
+    "prebuild": "npm run copy-dict",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
     "test": "vitest run"
   },
   "dependencies": {
+    "es-hangul": "^2.4.0",
+    "kuromoji": "^0.1.2",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

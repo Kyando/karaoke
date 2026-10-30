@@ -3,7 +3,7 @@ import { parseLrc } from './parseLrc'
 import { estimateWords } from './estimateWords'
 import { findLineIndex, wordProgress } from './timeline'
 import { median, tapDeviation } from './calibration'
-import { rankByDuration, type LrclibRecord } from './lrclib'
+import { groupVersions, rankVersions, type LrclibRecord } from './lrclib'
 
 describe('parseLrc', () => {
   it('lê linhas simples e calcula o fim pela próxima linha', () => {
@@ -100,13 +100,31 @@ describe('calibração', () => {
   })
 })
 
-describe('rankByDuration', () => {
-  const rec = (id: number, duration: number, synced = true): LrclibRecord => ({
+describe('versões do LRCLIB', () => {
+  const rec = (id: number, duration: number, lrc: string | null): LrclibRecord => ({
     id, duration, trackName: 't', artistName: 'a', albumName: null, instrumental: false,
-    plainLyrics: 'x', syncedLyrics: synced ? '[00:01.00] x' : null,
+    plainLyrics: 'x', syncedLyrics: lrc,
   })
-  it('prefere letra sincronizada e depois a duração mais próxima do vídeo', () => {
-    const out = rankByDuration([rec(1, 200), rec(2, 213, false), rec(3, 215)], 213)
-    expect(out.map((r) => r.id)).toEqual([3, 1, 2])
+  const A = '[00:15.62] linha'
+  const B = '[00:01.25] linha'
+
+  it('junta cópias da mesma letra e usa a duração mais comum', () => {
+    // Caso real de "Golden": a mesma sincronização aparece com durações de 176 s a 254 s.
+    const versions = groupVersions([rec(1, 199, A), rec(2, 194, A), rec(3, 195, A), rec(4, 194, A), rec(5, 254, A), rec(6, 192, B), rec(7, 10, null)])
+    expect(versions).toHaveLength(2)
+    const a = versions.find((v) => v.ids.includes(1))!
+    expect(a).toMatchObject({ copies: 5, typicalDuration: 194 })
+    expect(a.record.duration).toBe(194)
+  })
+
+  it('prefere a versão com duração típica igual à do vídeo', () => {
+    const versions = groupVersions([rec(1, 194, A), rec(2, 194, A), rec(3, 367, B)])
+    expect(rankVersions(versions, 367)[0].ids).toEqual([3])
+    expect(rankVersions(versions, 195)[0].ids).toEqual([1, 2])
+  })
+
+  it('no empate de duração, prefere a versão mais copiada', () => {
+    const versions = groupVersions([rec(1, 200, B), rec(2, 199, A), rec(3, 199, A)])
+    expect(rankVersions(versions, 199)[0].ids).toEqual([2, 3])
   })
 })
